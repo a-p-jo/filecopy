@@ -124,7 +124,7 @@ int main(int argc, char * argv[])
 				if(ferror(to))
 					printf("Failed : Unknown fatal error writing to %s\n",argv[2]);
 				
-				printf("Forced to abandon copying at %llu bytes... exiting...",(long long unsigned)(blocks_processed*BLOCK));
+				printf("Forced to abandon copying at %llu bytes... exiting...\n",(long long unsigned)(blocks_processed*BLOCK));
 
 				fclose(from);
 				fclose(to);
