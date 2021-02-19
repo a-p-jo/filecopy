@@ -8,7 +8,7 @@
  * PRINT_PROGRESS this macro is defined if you wish to allow the displaying of progress. Remove it to disable.
  *
  * BLOCK defines the block size in bytes. It is set to (1*1048576) or 1 MiB by defualt, and can be changed to an optimal value for your system.
- * BC will copy BLOCK bytes at-a-time from the source file to the target file. Changing this may potentially offer some improvement in transfer speed.
+ * BCP will copy BLOCK bytes at-a-time from the source file to the target file. Changing this may potentially offer some improvement in transfer speed.
 */
 #include <stdio.h>
 #include <stdint.h>
@@ -24,7 +24,7 @@ uint_fast64_t approx(long double num)
 
 int main(int argc, char * argv[])
 {
-	//usage : bc [source] [destination]
+	//usage : bcp [source] [destination]
 
 	if(argc >= 3)
 	{
