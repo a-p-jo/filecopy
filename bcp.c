@@ -1,13 +1,13 @@
 /* Two headers will be needed, standard I/O and standard integer
  * 
- * stdio.h provides the I/O functions : printf(), perror(), FILE*, fseek(), ftell() || _ftelli64(), fopen(), fclose(), fread(), fwrite(), fflush()
+ * stdio.h provides the I/O functions : printf(), perror(), FILE*, fseek(), ftell() OR _ftelli64(), fopen(), fclose(), fread(), fwrite(), fflush()
  * stdint.h provides uint_fast8_t , uint_fast64_t
  *
  * Two macros help easily configure the program.
  *
- * PRINT_PROGRESS this macro is defined if you wish to allow the displaying of progress. Remove it to disable.
+ * PRINT_PROGRESS - this macro is defined if you wish to allow the displaying of progress. Remove it to disable.
  *
- * BLOCK defines the block size in bytes. It is set to (1*1048576) or 1 MiB by defualt, and can be changed to an optimal value for your system.
+ * BLOCK - defines the block size in bytes. It is set to (1*1048576) or 1 MiB by defualt, and can be changed to an optimal value for your system.
  * BCP will copy BLOCK bytes at-a-time from the source file to the target file. Changing this may potentially offer some improvement in transfer speed.
 */
 #include <stdio.h>
@@ -43,11 +43,11 @@ int main(int argc, char * argv[])
 			 * Since filesize can't be negative, save to unsigned 64-bit integer.
 			 * Rewind the stream to it's begining.
 			 *
-			 * Why the ifdef _WIN32 ?
+			 * Why the ifdef _WIN32 and _ftelli64() ?
 			 *
 			 * Per standard , ftell() returns a LONG INT. 
-			 * This is 64-bit signed value in *NIX systems, which is ~8 exabytes, sufficient
-			 * This is a 32-bit signed value in NT systems, which is ~2 gigabytes, insufficient. 
+			 * This is 64-bit signed value in *NIX systems, which is ~8 exabytes,i.e. sufficient.
+			 * This is a 32-bit signed value in NT systems, which is ~2 gigabytes,i.e. insufficient. 
 			 * Thus,on Windows, use _ftelli64(), a "microsoft function" returning a 64-bit signed value
 			 */
 
@@ -61,6 +61,7 @@ int main(int argc, char * argv[])
 			rewind(from);
 
 			/* Declare a fast, static array of BLOCK bytes on the stack.
+			 *
 			 * Depending on CPU and size of BLOCK, potentially places buffer on resgisters or a fast part of RAM.
 			 * Nevertheless, it will perform no worse than a malloc() but with less error-checking nonsense, and will
 			 * likely perform better.
@@ -80,10 +81,10 @@ int main(int argc, char * argv[])
 			 * 2. Every time a block is copied, if net data copied is >= 1% of file size, print the changed percentage. 
 			 *
 			 * That is, we print only 100 times or lesser, and most looped math happens only on integers, which is more efficient.
-			 * Also, on a file smaller than (100 * BLOCK) bytes , 100 MiB for a 1 MiB block, there is not printing whatsoever,
+			 * Also, on a file smaller than (100 * BLOCK) bytes , 100 MiB for a 1 MiB block, there is no printing whatsoever,
 			 * as that would anyways be unnecessary given modern I/O speeds. 
 			 *
-			 * So, we need a variable storing the approximate number of blocks in 1% of filesize, a count of and a variable to store percentage till now.
+			 * So, we need a variable storing the approximate number of blocks in 1% of filesize, and a variable to store percentage.
 			 * As maximum % is 100 and % stays +ve, percent_till_now need not be larger than 8-bits and can be unsigned.
 			 */
 			uint_fast64_t one_percent = approx((0.01 * bytes)/BLOCK);
@@ -91,19 +92,27 @@ int main(int argc, char * argv[])
 			#endif
 
 			/* Try to fread BLOCK bytes from source stream.
-			 * Loop over the stream, fwrite'ing to destination and updating progress while able to read BLOCK bytes.
-			 * 
-			 * When unable to read BLOCK bytes, check for any errors.
 			 *
-			 * If no errors, we have encountered the last few bytes that are less than BLOCK (by default, 1 MiB). 
+			 * Loop over the stream, fwrite'ing to destination and updating progress while able to read BLOCK bytes.
+			 * In the loop condition , we are testing *both* fread() & fwrite(). With && operator, if fread() condition fails, it will not attempt to check
+			 * the second condition, hence fwrite() will not be executed with garbage/leftover values if fread() fails, 
+			 * without having to do a less elegant nested conditional underneath the loop.
+			 * 
+			 * When unable to read BLOCK bytes, check for any errors. Check BOTH streams, as error *may* be both ways. 
+			 *
+			 * If there are no errors, we have encountered the last few bytes that are less than BLOCK (by default, 1 MiB). 
 			 * This means we can fwrite these last few bytes and attempt to fclose the streams.
 			 *
-			 * Check both streams, as error may be both ways. If ferror() returns non-zero, there is some dire error - given it occured mid-I/O; IMMEDIATELY STOP.
-			 * Unfortunately, fread()/fwrite()/ferror() does not set errno per standard. Hence, print "unknown","fatal" error; copying is "abandoned" at foo bytes.
+			 * If ferror() returns non-zero, there is some dire error - given it occured mid-I/O - IMMEDIATELY STOP.
+			 * Unfortunately, fread()/fwrite()/ferror() does not set errno per standard. Hence, print "unknown fatal error" + copying is "abandoned" at foo bytes.
 			 * 
-			 * We could delete the output file, but since this a rare and very bad error, will leave it for the user if needs to recover.
+			 * We could delete the output file, but since this a rare and very bad error, will leave it as-is for the user if he needs to recover data.
 			 * It is easy to delete a corrupt file, but is relatively difficult to RECOVER a deleted file !
-			 * However, we will tidy up with fclose'ing the streams.
+			 *
+			 * Also it's quite likely , depending on what caused the error, that remove() will also uselessly fail until the user fixes things.
+			 *
+			 * However, we *will* tidy up with fclose'ing the streams - but only after the error message, in case that segfaults
+			 * (which it may, again depending on cause of error)
 			 */
 
 			while((bytes_read = fread(buffer,1,BLOCK,from)) == BLOCK && fwrite(buffer,1,BLOCK,to) == BLOCK)
@@ -122,6 +131,7 @@ int main(int argc, char * argv[])
 				if(ferror(from))
 					printf("Failed : Unknown fatal reading from %s\n",argv[1]);
 				if(ferror(to))
+					failed_fwrite : // Used if last fwrite() fails ; see lines 151 to 155 
 					printf("Failed : Unknown fatal error writing to %s\n",argv[2]);
 				
 				printf("Forced to abandon copying at %llu bytes... exiting...\n",(long long unsigned)(blocks_processed*BLOCK));
@@ -133,10 +143,19 @@ int main(int argc, char * argv[])
 
 			else
 			{
-				fwrite(buffer,1,bytes_read,to); 
-				// If this fails, that *should* be reflected in fclose(to) below. We will not check this for the sake of our sanity.
+				/* One last call to fwrite() remains for any leftover bytes, i.e. there is still room for failure.
+				 *
+				 * However, we need only call fwrite() if there's actually anything to write. If there's 0 bytes left, avoid unnecessary
+				 * statements - the && operator helps - if there's nothing to be written , the fwrite is never executed, as that condition is not evaluated. 
+				 *
+				 * If fwrite fails, avoid repetitive/boilerplate code, use goto as the error and it's handling is EXACTLY the same as we *just* handled.
+				 * Note : failed_fwrite ends with "return -1;" ; no infinite goto bug.
+				 */
 
-				/* Done copying streams, attempt fclose'ing them.
+				if(bytes_read != 0 && fwrite(buffer,1,bytes_read,to) != bytes_read)
+					goto failed_fwrite; 
+
+				/* Done copying streams,no errors yet, attempt fclose'ing them.
 				 *
 				 * This writes remaining data to disk for destination stream, so check for any errors.
 				 *
