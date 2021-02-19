@@ -77,11 +77,11 @@ int main(int argc, char * argv[])
 			#ifdef PRINT_PROGRESS
 			/* How progress is printed efficiently :
 			 *
-			 * 1. Take an approximate value of the number of blocks in in 1% of the source file.
+			 * 1. Take an approximate value of the number of blocks in in 1% of the source file. Printing only happens if 1% is approximately *at least* one block.
 			 * 2. Every time a block is copied, if net data copied is >= 1% of file size, print the changed percentage. 
 			 *
 			 * That is, we print only 100 times or lesser, and most looped math happens only on integers, which is more efficient.
-			 * Also, on a file smaller than (100 * BLOCK) bytes , 100 MiB for a 1 MiB block, there is no printing whatsoever,
+			 * Also, on a file smaller than (100 * BLOCK) bytes , 100 MiB for a 1 MiB block or 100x bytes for any x bytes per block, there is no printing whatsoever,
 			 * as that would anyways be unnecessary given modern I/O speeds. 
 			 *
 			 * So, we need a variable storing the approximate number of blocks in 1% of filesize, and a variable to store percentage.
@@ -118,23 +118,25 @@ int main(int argc, char * argv[])
 			while((bytes_read = fread(buffer,1,BLOCK,from)) == BLOCK && fwrite(buffer,1,BLOCK,to) == BLOCK)
 			{
 				#ifdef PRINT_PROGRESS
-				if((percent_till_now = approx((++blocks_processed) / one_percent)) >= 1)
+				if(one_percent && (percent_till_now = approx((++blocks_processed) / one_percent)) >= 1)
 				{
 					printf("%d%%\r", percent_till_now);
 					fflush(stdout);
 				}
+				#else
+				++blocks_processed;
 				#endif
 			}
 
 			if(ferror(from) || ferror(to))
 			{
 				if(ferror(from))
-					printf("Failed : Unknown fatal reading from %s\n",argv[1]);
+					fprintf(stderr,"Failed : Unknown fatal reading from %s\n",argv[1]);
 				if(ferror(to))
 					failed_fwrite : // Used if last fwrite() fails ; see lines 151 to 155 
-					printf("Failed : Unknown fatal error writing to %s\n",argv[2]);
+					fprintf(stderr,"Failed : Unknown fatal error writing to %s\n",argv[2]);
 				
-				printf("Forced to abandon copying at %llu bytes... exiting...\n",(long long unsigned)(blocks_processed*BLOCK));
+				fprintf(stderr,"Forced to abandon copying at %llu bytes... exiting...\n",(long long unsigned)(blocks_processed*BLOCK));
 
 				fclose(from);
 				fclose(to);
@@ -195,7 +197,7 @@ int main(int argc, char * argv[])
 	}
 	else
 	{
-		printf("Failed : Got %d argument(s), expected %d.\n",argc,3);
+		fprintf(stderr,"Failed : Got %d argument(s), expected %d.\n",argc,3);
 		return -4;
 	}
 
