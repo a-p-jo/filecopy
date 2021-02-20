@@ -97,7 +97,7 @@ int main(int argc, char * argv[])
 			if(ferror(from) || ferror(to))
 			{
 				if(ferror(from))
-					fprintf(stderr,"Failed : Unknown fatal reading from %s\n",argv[1]);
+					fprintf(stderr,"Failed : Unknown fatal error reading from %s\n",argv[1]);
 				if(ferror(to))
 					failed_fwrite : 
 					fprintf(stderr,"Failed : Unknown fatal error writing to %s\n",argv[2]);
