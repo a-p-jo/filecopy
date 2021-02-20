@@ -25,7 +25,6 @@ int main(int argc, char * argv[])
 			fseek(from,0,SEEK_END);
 			
 			#if LONG_MAX == LLONG_MAX
-			puts("long was 64-bit !");
 			long bytes = ftell(from);
 			
 			#elif defined _WIN32
