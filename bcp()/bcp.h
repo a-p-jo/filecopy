@@ -57,7 +57,7 @@ int bcp(char * source, char *destination, char * if_only_32bit_offset)
 		
     if(from != NULL && to != NULL)
     {
-        /* Get the size of the file in bytes.
+        /* Get the size of the file in bytes, needed only if need to print progress.
          *
          * In short : 
          * fseek() to end, find the offset from the begining. This offset is the size , in bytes, of the file. Rewind the stream to it's begining.
@@ -79,7 +79,7 @@ int bcp(char * source, char *destination, char * if_only_32bit_offset)
          * 
         */
 
-
+	#ifdef PRINT_PROGRESS
         fseek(from,0,SEEK_END);
         
         #if LONG_MAX == LLONG_MAX
@@ -106,6 +106,7 @@ int bcp(char * source, char *destination, char * if_only_32bit_offset)
         #endif
 
         rewind(from);
+	#endif
 
         /* Declare a fast, static array of BLOCK bytes on the stack.
          *
