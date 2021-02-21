@@ -29,7 +29,7 @@ int bcp(char * source, char *destination, char * if_only_32bit_offset)
     {
         
 
-
+	#ifdef PRINT_PROGRESS
         fseek(from,0,SEEK_END);
         
         #if LONG_MAX == LLONG_MAX
@@ -56,6 +56,7 @@ int bcp(char * source, char *destination, char * if_only_32bit_offset)
         #endif
 
         rewind(from);
+	#endif
 
         
      
