@@ -34,7 +34,7 @@ int main(int argc, char * argv[])
 		
 		if(from != NULL && to != NULL)
 		{
-			/* Get the size of the file in bytes.
+			/* Get the size of the file in bytes, needed only if we need to print progress.
 			 *
 			 * In short : 
 			 * fseek() to end, find the offset from the begining. This offset is the size , in bytes, of the file. Rewind the stream to it's begining.
@@ -57,6 +57,7 @@ int main(int argc, char * argv[])
 			 * 
 			 */
 
+			#ifdef PRINT_PROGRESS
 			fseek(from,0,SEEK_END);
 			
 			#if LONG_MAX == LLONG_MAX
@@ -96,6 +97,7 @@ int main(int argc, char * argv[])
 			#endif
 
 			rewind(from);
+			#endif
 
 			/* Declare a fast, static array of BLOCK bytes on the stack.
 			 *
