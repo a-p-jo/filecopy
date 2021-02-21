@@ -21,7 +21,7 @@ int main(int argc, char * argv[])
 		if(from != NULL && to != NULL)
 		{
 			
-
+			#ifdef PRINT_PROGRESS
 			fseek(from,0,SEEK_END);
 			
 			#if LONG_MAX == LLONG_MAX
@@ -61,6 +61,7 @@ int main(int argc, char * argv[])
 			#endif
 
 			rewind(from);
+			#endif
 
 			
 
