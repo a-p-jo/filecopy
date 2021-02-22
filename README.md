@@ -7,9 +7,9 @@ It's functionality , but not implementation, overlaps with that of `dd` , and th
  
 `dd` uses _low-level_ system calls , non-standard C, has elaborate, (_tiresome ?_) syntax, and is _notorious_ for failing in mysterious or dangerous ways in inexperienced hands. This is not a _defect_ per se; `dd` is an _advanced and very precise_ tool. It was originally written in the times of tape drives, which is also perhaps the reason for some of its peculiarities.
  
-However, `dd` has become the default for doing backups of files, disks, flashing ISOs, etc - somtimes causing serious issues for casual users. In such cases, `bcp` functions _alike_ `dd` , with the simple syntax of `cp` , keeping up with dd's speed by < 1 second - while being reliable, easier to casually use and port to _any_ OS/platform. BCP also displays progress _by default_ !
+However, `dd` has become the default for doing everyday tasks : backups of files, disks, flashing ISOs, etc - somtimes causing serious issues for casual users. In such cases, `bcp` functions _alike_ `dd` , with the simple syntax of `cp` , and is _much_ easier to troubleshoot and understand - while also keeping up with dd's speed by < 1 second and being more reliable, easier to casually use and port to _any_ OS/platform. BCP also displays progress _by default_.
  
-_BCP does NOT replace or clone `dd` in the least - `dd` is it's own low-level, advanced utility, and is certainly the go-to for advanced control over the copying; BCP is for the other 90% of the time._
+_BCP does NOT replace or clone `dd` in the least - `dd` is it's own low-level, advanced utility, and is certainly the go-to for advanced control over the copying; BCP is for the other 90% of the time :)_
  
 ### Usage
 _If you can use `cp` , you can use BCP !_
@@ -24,7 +24,7 @@ If given another argument, the second argument is treated as the filename of the
  
 NOTES :
 
-_If this destination file does not exist, it is created. If it does, it is OVERWRITTEN !_
+_If this destination file does not exist, it is created. If it preexists, it is OVERWRITTEN !_
 
 _BCP will treat arguments *exactly* in the order specified above. Do NOT mix it up !_
 
