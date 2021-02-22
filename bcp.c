@@ -23,14 +23,19 @@
 int main(int argc, char * argv[])
 {
 
-	if(argc >= 3) //usage : bcp [source] [destination]
+	if(argc >= 3) //usage : bcp [source] [destination (optional, stdout by default)]
 	{
-		/* Open source and destination files as binary streams to read and write to.
+		/* Open file(s) as binary streams to read and write to.
 		 * Proceed if both streams were successfully opened.
 		 */
+		
+		uint_fast8_t outfile_given = (argc >= 3);
 
 		FILE * from = fopen(argv[1],"rb");
-		FILE * to = fopen(argv[2],"wb");
+		FILE * to = stdout;
+		
+		if (outfile_given)
+			to = fopen(argv[2],"wb");
 		
 		if(from != NULL && to != NULL)
 		{
@@ -71,21 +76,24 @@ int main(int argc, char * argv[])
 			off_t bytes = ftello(from);
 			
 			#else
-			puts("WARNING : BCP could not use 64-bit file offsets.\nIf your file is larger than or close to 2 GB in size, abort immediately !");
+			fprintf(stderr,"WARNING : BCP could not use 64-bit file offsets.\nIf your file is larger than or close to 2 GB in size, abort immediately !\n");
 			while(1)
 			{
 				char abort[101] = "";
 				
-				printf("Abort ? (Y/N) : ");
+				fprintf(stderr,"Abort ? (Y/N) : ");
 				fgets(abort,101,stdin);
 			
 				if(*abort == 'n' || *abort == 'N')
 					break;
 				else if(*abort == 'y' || *abort == 'Y')
 				{
-					puts("Aborting...");
+					frprintf(stderr,"Aborting...\n");
 					fclose(from);
-					fclose(to);
+					
+					if(outfile_given)
+						fclose(to);
+					
 					return 1;
 				}
 				else
@@ -149,7 +157,7 @@ int main(int argc, char * argv[])
 			 *
 			 * Also it's quite likely , depending on what caused the error, that remove() will also uselessly fail until the user fixes things.
 			 *
-			 * However, we *will* tidy up with fclose'ing the streams - but only after the error message, in case that segfaults (which it may, again depending on cause of error)
+			 * However, we *will* tidy up with fclose'ing the stream(s) - but only after the error message, in case that segfaults (which it may, again depending on cause of error)
 			 */
 
 			while((bytes_read = fread(buffer,1,BLOCK,from)) == BLOCK && fwrite(buffer,1,BLOCK,to) == BLOCK)
@@ -162,10 +170,8 @@ int main(int argc, char * argv[])
 				percent_now = bytes_processed / one_percent; // get the new percentage (in int form, since both operands are ints)
 				
 				if((percent_now - percent) >= 1) // avoid wasteful and inefficient printing
-				{
-					printf("%u%%\r", percent_now);
-					fflush(stdout);
-				}
+					fprintf(stderr,"%u%%\r", percent_now);
+				
 				percent = percent_now; // update percentage count
 				#endif
 			}
@@ -181,7 +187,10 @@ int main(int argc, char * argv[])
 				fprintf(stderr,"Forced to abandon copying at %llu bytes... exiting...\n",(long long unsigned)(bytes_processed));
 
 				fclose(from);
-				fclose(to);
+				
+				if(outfile_given)
+					fclose(to);
+				
 				return -1;
 			}
 
@@ -210,17 +219,19 @@ int main(int argc, char * argv[])
 
 				fclose(from);
 
-				if(fclose(to) == 0)
+				if(outfile_given && fclose(to) == 0)
 				{	
 					printf("Copied %llu bytes from %s to %s.\n",(long long unsigned)(bytes_processed + bytes_read),argv[1],argv[2]); 
 					// must add in bytes_read from the last fread() when displaying net bytes copied.
 					return 0;
 				}
-				else
+				else if(outfile_given)
 				{
 					perror("Failed : Error writing to destination ");
 					return -2;
 				}
+				else
+					return 0;
 			}
 		}
 		else
@@ -233,14 +244,16 @@ int main(int argc, char * argv[])
 			if(to != NULL)
 			{
 				perror("Failed : Error opening source ");
-				fclose(to);
+				
+				if(outfile_given)
+					fclose(to);
 			}
 			return -3;
 		}
 	}
 	else
 	{
-		fprintf(stderr,"Failed : Got %d argument(s), expected %d.\n",argc,3);
+		fprintf(stderr,"Failed : Got 0 arguments, expected at least 1.\n");
 		return -4;
 	}
 
