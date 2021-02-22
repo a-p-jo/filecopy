@@ -1,6 +1,6 @@
-#ByteCopy v2.5
+# ByteCopy v2.5
  
-###About
+### About
 ByteCopy , or BCP, copies files accurately (_down to the bytes_) in a _simple , safe, and efficient and expressive manner_.
  
 The idea is to have performant and minimalist code, while keeping it portable and reliable.
@@ -14,7 +14,7 @@ However, `dd` has become the default for doing byte-accurate copying and backup 
  
 _BCP does NOT replace or clone `dd` in the least - `dd` is it's own thing, has its uses, and is certainly the go-to for advanced control over the copying ! _
  
-###Usage
+### Usage
 _If you can use `cp` , you can use BCP !_
  
 *Usage : `bcp [source file] [destination file (optional)]`*
@@ -35,7 +35,7 @@ Examples :
 	`bcp settings.json D:\backups\settings.json`
 	and so on, and so forth.
  
-###API
+### API
 `bcp.h` contains the C function `bcp()`, which will copy all bytes from one file to another by name, just like the program.
  
 To put it simply, `bcp()` allows you to incorporate the mechanisms of BCP _within_ your program easily, just by doing an `#include "bcp.h"` and calling `bcp(...)`.
