@@ -23,6 +23,7 @@ If given no other arguments, bcp will copy to stdout, meaning you can _redirect_
 If given another argument, the second argument is treated as the filename of the destination file.
  
 NOTES :
+
 _If this destination file does not exist, it is created. If it does, it is OVERWRITTEN !_
 
 _BCP will treat arguments *exactly* in the order specified above. Do NOT mix it up !_
@@ -30,14 +31,13 @@ _BCP will treat arguments *exactly* in the order specified above. Do NOT mix it 
 _Any arguments beyond the first two are discarded automatically_.
   
 Examples :
-	`bcp ~/.zshrc  /mnt/backups/zhrc.bak`
+```
+bcp ~/.zshrc  /mnt/backups/zhrc.bak
 	
-	`bcp /dev/sda | gzip > drive.bak`
+bcp /dev/sda | gzip > drive.bak
 	
-	`bcp settings.json D:\backups\settings.json`
-	
-	and so on, and so forth.
- 
+bcp settings.json D:\backups\settings.json
+```	
 ### API
 `bcp.h` contains the C function `bcp()`, which allows you to incorporate the mechanisms of BCP _within_ your program easily, just by doing an `#include "bcp.h"` and calling `bcp(...)`.
  
