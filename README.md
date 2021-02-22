@@ -12,7 +12,7 @@ These are _not really_ the fault of `dd`, because `dd` can potentially be a _ver
  
 However, `dd` has become the default for doing byte-accurate copying and backup of files, disks, ISOs, etc. - readily recommended across forums; causing confusion and sometimes data loss when someone not well-aware of its nuances experiences a symptom of them. In such cases, `bcp` functions _alike_ `dd` , with the simple syntax of `cp` , using streams and mostly standard C and attempts to robustly handle errors or warnings as they occur while keeping up with dd's speed by < 1 second.  This allows it to be more reliable and easier to casually use as well as port to _any_ OS/platform. BCP also displays progress _by default_, although this can certainly be turned off.
  
-_BCP does NOT replace or clone `dd` in the least - `dd` is it's own thing, has its uses, and is certainly the go-to for advanced control over the copying ! _
+_BCP does NOT replace or clone `dd` in the least - `dd` is it's own thing, has its uses, and is certainly the go-to for advanced control over the copying !_
  
 ### Usage
 _If you can use `cp` , you can use BCP !_
