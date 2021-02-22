@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdint.h>
 #include <limits.h>
@@ -11,12 +10,16 @@
 int main(int argc, char * argv[])
 {
 
-	if(argc >= 3) 
+	if(argc >= 2) 
 	{
 		
 
 		FILE * from = fopen(argv[1],"rb");
-		FILE * to = fopen(argv[2],"wb");
+		FILE * to = stdout;
+		
+		if (argc >= 3)
+			to = fopen(argv[2],"wb");
+		
 		
 		if(from != NULL && to != NULL)
 		{
@@ -151,7 +154,7 @@ int main(int argc, char * argv[])
 	}
 	else
 	{
-		fprintf(stderr,"Failed : Got %d argument(s), expected %d.\n",argc,3);
+		fprintf(stderr,"Failed : Got 0 arguments, expected at least 1.\n");
 		return -4;
 	}
 
