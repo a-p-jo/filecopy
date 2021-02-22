@@ -13,11 +13,12 @@ int main(int argc, char * argv[])
 	if(argc >= 2) 
 	{
 		
-
+		uint_fast8_t outfile_given = (argc >= 3);
+		
 		FILE * from = fopen(argv[1],"rb");
 		FILE * to = stdout;
 		
-		if (argc >= 3)
+		if (outfile_given)
 			to = fopen(argv[2],"wb");
 		
 		
@@ -38,47 +39,44 @@ int main(int argc, char * argv[])
 			off_t bytes = ftello(from);
 			
 			#else
-			puts("WARNING : BCP could not use 64-bit file offsets.\nIf your file is larger than or close to 2 GB in size, abort immediately !");
+			fprintf(stderr,"WARNING : BCP could not use 64-bit file offsets.\nIf your file is larger than or close to 2 GB in size, abort immediately !\n");
 			while(1)
 			{
 				char abort[101] = "";
 				
-				printf("Abort ? (Y/N) : ");
+				fprintf(stderr,"Abort ? (Y/N) : ");
 				fgets(abort,101,stdin);
 			
 				if(*abort == 'n' || *abort == 'N')
 					break;
 				else if(*abort == 'y' || *abort == 'Y')
 				{
-					puts("Aborting...");
+					fprintf(stderr,"Aborting...\n");
 					fclose(from);
-					fclose(to);
+					
+					if(outfile_given)
+						fclose(to);
+					
 					return 1;
 				}
 				else
 					continue;
 			}
 			
-			long bytes = ftell(from);
-			
+			long bytes = ftell(from);			
 			#endif
 
 			rewind(from);
 			#endif
 
-			
-
 			uint_fast8_t buffer[BLOCK];
 			uint_fast64_t bytes_processed = 0;
 			uint_fast64_t bytes_read;
 
-			#ifdef PRINT_PROGRESS
-			
+			#ifdef PRINT_PROGRESS			
 			uint_fast64_t one_percent = approx((0.01 * bytes));
 			uint_fast8_t percent = 0, percent_now;
-			#endif
-
-			
+			#endif			
 
 			while((bytes_read = fread(buffer,1,BLOCK,from)) == BLOCK && fwrite(buffer,1,BLOCK,to) == BLOCK)
 			{
@@ -91,8 +89,8 @@ int main(int argc, char * argv[])
 				
 				if((percent_now - percent) >= 1) 
 				{
-					printf("%u%%\r", percent_now);
-					fflush(stdout);
+					fprintf(stderr,"%u%%\r", percent_now);
+					//fflush(stdout);
 				}
 				percent = percent_now; 
 				#endif
@@ -109,7 +107,10 @@ int main(int argc, char * argv[])
 				fprintf(stderr,"Forced to abandon copying at %llu bytes... exiting...\n",(long long unsigned)(bytes_processed));
 
 				fclose(from);
-				fclose(to);
+				
+				if(outfile_given)
+					fclose(to);
+				
 				return -1;
 			}
 
@@ -118,23 +119,23 @@ int main(int argc, char * argv[])
 				
 
 				if(bytes_read && fwrite(buffer,1,bytes_read,to) != bytes_read)
-					goto failed_fwrite; 
-
-				
+					goto failed_fwrite; 				
 
 				fclose(from);
 
-				if(fclose(to) == 0)
+				if(outfile_given && fclose(to) == 0)
 				{	
 					printf("Copied %llu bytes from %s to %s.\n",(long long unsigned)(bytes_processed + bytes_read),argv[1],argv[2]); 
 					
 					return 0;
 				}
-				else
+				else if(outfile_given)
 				{
 					perror("Failed : Error writing to destination ");
 					return -2;
 				}
+				else
+					return 0;
 			}
 		}
 		else
@@ -147,7 +148,9 @@ int main(int argc, char * argv[])
 			if(to != NULL)
 			{
 				perror("Failed : Error opening source ");
-				fclose(to);
+				
+				if(outfile_given)
+					fclose(to);
 			}
 			return -3;
 		}
@@ -156,7 +159,5 @@ int main(int argc, char * argv[])
 	{
 		fprintf(stderr,"Failed : Got 0 arguments, expected at least 1.\n");
 		return -4;
-	}
-
-	
+	}	
 }
