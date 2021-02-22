@@ -5,7 +5,7 @@ ByteCopy , or BCP, intends to copy files accurately (_down to the bytes_) in a _
  
 It's functionality , but not implementation, overlaps with that of `dd` , and this is by design. 
  
-`dd` uses _low-level_ system calls , non-standard C, has elaborate, (_tiresome ?_) syntax, and is _notorious_ for failing in mysterious or dangerous ways in inexperienced hands. This is not a _defect_ , `dd` is a _very precise_ and fast tool. It was originally written in the times of tape drives, which is also perhaps the reason for some of its peculiarities.
+`dd` uses _low-level_ system calls , non-standard C, has elaborate, (_tiresome ?_) syntax, and is _notorious_ for failing in mysterious or dangerous ways in inexperienced hands. This is not a _defect_ per se; `dd` is an _advanced and very precise_ tool. It was originally written in the times of tape drives, which is also perhaps the reason for some of its peculiarities.
  
 However, `dd` has become the default for doing backups of files, disks, flashing ISOs, etc - somtimes causing serious issues for casual users. In such cases, `bcp` functions _alike_ `dd` , with the simple syntax of `cp` , keeping up with dd's speed by < 1 second - while being reliable, easier to casually use and port to _any_ OS/platform. BCP also displays progress _by default_ !
  
