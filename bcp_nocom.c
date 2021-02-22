@@ -88,10 +88,8 @@ int main(int argc, char * argv[])
 				percent_now = bytes_processed / one_percent; 
 				
 				if((percent_now - percent) >= 1) 
-				{
 					fprintf(stderr,"%u%%\r", percent_now);
-					//fflush(stdout);
-				}
+				
 				percent = percent_now; 
 				#endif
 			}
