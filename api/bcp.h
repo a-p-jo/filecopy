@@ -14,16 +14,12 @@
 #define BLOCK (1*1048576) // blocksize for buffering read-write operations while copying. 1 MiB by default.
 
 #ifdef DEFAULT
-	/* By default, the function(s) only prints errors (so that you don't have to write boilerplate code for doing it yourself).
-	 *
-	 * Optionally, it can be configured to print progress % while copying, or prevent overwriting.
-	 * To do so, uncomment the #defines
-	 */
+
 	#define PRINT_MID_IO_ERROR // prints to stderr if fread() or fwrite() fail
 	#define PRINT_OPEN_CLOSE_ERROR // prints to stderr if fopen() or fclose() fail
 
-	//#define OVERWRITE_PROTECT
-	//#define PRINT_PROGRESS
+	#define OVERWRITE_PROTECT
+	#define PRINT_PROGRESS
 #endif
 
 #ifdef PRINT_PROGRESS
@@ -36,8 +32,8 @@
 #endif
 
 #ifdef OVERWRITE_PROTECT
-	//#define ASK_BEFORE_OVERWRITE // asks the user before overwriting a file
-	#define ABORT_IF_OVERWRITING   // automatically exits if destination file pre-exists
+	#define ASK_BEFORE_OVERWRITE // asks the user before overwriting a file
+	//#define ABORT_IF_OVERWRITING   // automatically exits if destination file pre-exists
 
 	#ifdef ABORT_IF_OVERWRITING
 		#define PRINT_OVERWRITE_ABORT // Inform user of automatic abort
