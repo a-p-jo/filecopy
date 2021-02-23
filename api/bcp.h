@@ -40,6 +40,10 @@
 	#endif
 #endif
 
+uint_fast64_t bytes_processed = 0;
+uint_fast64_t bytes_read;
+uint_fast8_t buffer[BLOCK];
+
 int bcp(char * source, char * destination)
 {
 	FILE * from = fopen(source,"rb");
@@ -102,10 +106,6 @@ int bcp(char * source, char * destination)
 	
 			rewind(from);
 		#endif
-
-		uint_fast8_t buffer[BLOCK];
-		uint_fast64_t bytes_processed = 0;
-		uint_fast64_t bytes_read;
 
 		#ifdef PRINT_PROGRESS
 			uint_fast64_t one_percent = approx((0.01 * bytes));
@@ -207,10 +207,6 @@ int fbcp(FILE * from, FILE * to)
 
 		rewind(from);
 	#endif
-
-	uint_fast8_t buffer[BLOCK];
-	uint_fast64_t bytes_processed = 0;
-	uint_fast64_t bytes_read;
 
 	#ifdef PRINT_PROGRESS
 		uint_fast64_t one_percent = approx((0.01 * bytes));
