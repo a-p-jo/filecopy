@@ -243,10 +243,7 @@ int fbcp(FILE * from, FILE * to)
 
 			fprintf(stderr,"Forced to abandon at %llu bytes... exiting...\n",(long long unsigned)(bytes_processed));
 		#endif
-
-		 fclose(from);
-		 fclose(to);
-		 return -1;
+		return -1;
 	}
 	else
 	{
@@ -256,19 +253,7 @@ int fbcp(FILE * from, FILE * to)
 		#else 
 			return -1;
 		#endif
-
-		fclose(from);
-
-		if(fclose(to) == 0)                
-			return 0;
-
-		else
-		{
-			#ifdef PRINT_OPEN_CLOSE_ERRORS
-				perror("Failed ");
-			#endif
-			return -2;
-		}
+		return 0;
 	}
 }
 		
