@@ -39,25 +39,28 @@ bcp /dev/sda | gzip > drive.bak
 bcp settings.json D:\backups\settings.json
 ```	
 ### API
-`bcp.h` contains the C function `bcp()`, which allows you to incorporate the mechanisms of BCP _within_ your program easily, just by doing an `#include "bcp.h"` and calling `bcp(...)`.
+`bcp.h` contains C functions incorporating mechanisms of BCP _within_ your program easily.
+You can further customize the exact workings through macros.
 
-You can further customize the exact workings of the function through the macros in `bcp.h`, configuring what kind of errors it prints for you , if it warns the user when a file pre-exists , etc.
+**Overview of `bcp.h` :**
  
-_Very soon_, there will be another `fbcp()` in `bcp.h` , which will work not with filenames, but rather streams (`FILE *`s).
- 
-**Overview of `bcp()` :**
- 
-Prototype : `int bcp(char * source ,char * destination)`
+Prototype : `int bcp(char * source ,char * destination)` and `int fbcp(FILE * from, FILE * to)`
 
 With the following return values :
 ```c
 /*
+ * bcp() :
  * 0 : Success
  *-1 : Read/Write error mid-I/O (copying abandoned mid-way)
  *-2 : Error fclose()'ing destination file
  *-3 : Error opening destination/source
  *1 : Aborted without copying when encountering a non-64 bit offset (Only if you need to print progress as copying)
  *2 : User aborted when told file pre-exists
+ *
+ *fbcp() :
+ * 0 : Success
+ *-1 : Read/Write error mid-I/O (copying abandoned mid-way)
+ * 1 : Aborted without copying when encountering a non-64 bit offset (Only if you need to print progress as copying)
  */
 ```	
 ###### BCP is actively-maintained, FLOSS , minimal code that is _not complete yet_. Once, complete, binaries will be released. I hope you find good use for it !
