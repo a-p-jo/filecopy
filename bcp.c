@@ -23,7 +23,7 @@
 int main(int argc, char * argv[])
 {
 
-	if(argc >= 3) //usage : bcp [source] [destination (optional, stdout by default)]
+	if(argc >= 2) //usage : bcp [source] [destination (optional, stdout by default)]
 	{
 		/* Open file(s) as binary streams to read and write to.
 		 * Proceed if both streams were successfully opened.
