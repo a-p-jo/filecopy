@@ -1,4 +1,4 @@
-# ByteCopy v2.5
+# ByteCopy v3
  
 ### About
 ByteCopy , or BCP, intends to copy files accurately (_down to the bytes_) in a _simple , safe and efficient manner_.
