@@ -1,4 +1,4 @@
-# ByteCopy v3
+# ByteCopy v3.5
  
 ### About
 ByteCopy , or BCP, intends to copy files accurately (_down to the bytes_) in a _simple , safe and efficient manner_.
@@ -38,29 +38,4 @@ bcp /dev/sda | gzip > drive.bak
 	
 bcp settings.json D:\backups\settings.json
 ```	
-### API
-`bcp.h` contains C functions incorporating mechanisms of BCP _within_ your program easily.
-You can further customize the exact workings through macros.
-
-**Overview of `bcp.h` :**
- 
-Prototype : `int bcp(char * source ,char * destination)` and `int fbcp(FILE * from, FILE * to)`
-
-With the following return values :
-```c
-/*
- * bcp() :
- * 0 : Success
- *-1 : Read/Write error mid-I/O (copying abandoned mid-way)
- *-2 : Error fclose()'ing destination file
- *-3 : Error opening destination/source
- *1 : Aborted without copying when encountering a non-64 bit offset (Only if you need to print progress as copying)
- *2 : User aborted when told file pre-exists
- *
- *fbcp() :
- * 0 : Success
- *-1 : Read/Write error mid-I/O (copying abandoned mid-way)
- * 1 : Aborted without copying when encountering a non-64 bit offset (Only if you need to print progress as copying)
- */
-```	
-###### BCP is actively-maintained, FLOSS , minimal code that is _not complete yet_. Once, complete, binaries will be released. I hope you find good use for it !
+######You can `#include bcp.h` + compile `bcp.c`to incorporate BCP functionality in your own C code ! In fact, our `main.c` is just ~ 60 lines long !
