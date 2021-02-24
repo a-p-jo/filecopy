@@ -28,9 +28,9 @@ int main(int argc, char * argv[])
 		{
 			if(overwrite_permission_given)
 			{
-				if(!strcmp(argv[3],"y") || strcmp(argv[3], "yes"))
+				if(!strcmp(argv[3],"y") || !strcmp(argv[3], "yes"))
 					;
-				else if(!strcmp(argv[3],"n") || strcmp(argv[3], "no"))
+				else if(!strcmp(argv[3],"n") || !strcmp(argv[3], "no"))
 				{
 					FILE * tmp = fopen(argv[2],"rb");
 					if(tmp != NULL)
