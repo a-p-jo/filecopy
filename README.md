@@ -38,4 +38,4 @@ bcp /dev/sda | gzip > drive.bak
 	
 bcp settings.json D:\backups\settings.json
 ```	
-######You can `#include bcp.h` + compile `bcp.c`to incorporate BCP functionality in your own C code ! In fact, our `main.c` is just ~ 60 lines long !
+###### You can `#include bcp.h` + compile `bcp.c`to incorporate BCP functionality in your own C code ! In fact, our `main.c` is just ~ 60 lines long !
