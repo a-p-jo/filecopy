@@ -41,9 +41,12 @@ int main(int argc, char * argv[])
 					}
 					fclose(tmp);
 				}
+				else
+					goto ask;
 			}
 			else
 			{
+				ask :
 				if(!overwrite_chk(argv[2]))
 					;
 				else
