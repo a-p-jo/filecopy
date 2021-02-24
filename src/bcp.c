@@ -164,11 +164,11 @@ int overwrite_chk(char * name)
  * Returns 0 if continuing, non-zero if aborting.
  */
 	FILE * tmp = fopen(name,"rb");
-	if(name != NULL)
+	if(tmp != NULL)
 	{
 		#if defined ABORT_IF_OVERWRITING
 			#ifdef PRINT_OVERWRITE_ABORT
-				fprintf(stderr,"%s already exits, aborting...\n",name);
+				fprintf(stderr,"%s already exists, aborting...\n",name);
 			#endif
 			fclose(tmp);
 			return 1;
