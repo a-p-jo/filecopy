@@ -24,9 +24,9 @@ If given another argument, the second argument is treated as the name of the des
  
 NOTES :
 
-_If this destination file does not exist, it is created. If it preexists, it is OVERWRITTEN !_
+_If this destination file does not exist, it is created._
 
-_BCP will treat arguments *exactly* in the order specified above. Do NOT mix it up !_
+_BCP will treat arguments *exactly* in the order specified above._
 
 _Any arguments beyond the first three, and the third if invalid, are ignored automatically_.
   
