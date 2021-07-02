@@ -19,7 +19,7 @@ int_fast64_t getsize(FILE * of)
  * Required to print progress.
  *
  * For any real usability, this offset needs to be >= 64-bit ; 32-bit can only handle 2 GB filesizes. 
- * Hence, we will have to check datatypes during pre-processing , to conditionally compile code appropriately.
+ * Hence, we will have to check datatypes during pre-processing , to conditionally compile with correct data types.
  *
  * Conditional Compilation / Pre-processor checks :
  * 	1. C standard function ftell() returns the offset as a long. Check if a long is at least 64-bits. If yes, use ftell().
@@ -27,9 +27,9 @@ int_fast64_t getsize(FILE * of)
  * 		a) If Windows, use microsoft's _ftelli64(), guaranteed to return 64-bit offsets.
  *		b) If UNIX/POSIX, we must be in a 32-bit environment. 
  *		   As per POSIX, if we #define the offset-bits macro to 64 and then use ftello(), we'll get a 64-bit offset.
- *		c) If neither, this is some obscure/rare (presumably 32-bit) environment. Forget about printing progress, #undef the PRINT_PROGRESS. 
+ *		c) If neither, this is some obscure/rare (presumably 32-bit) environment, #undef the PRINT_PROGRESS. 
  */
-	fseek(of,0,SEEK_END);
+	if(fseek(of,0,SEEK_END)) return -1;
 	int_fast64_t size;
 
 	#if LONG_MAX >= LLONG_MAX
@@ -46,8 +46,8 @@ int_fast64_t getsize(FILE * of)
 		#undef PRINT_PROGRESS
 	#endif            
 
-	rewind(of);
-	return size;
+	if(fseek(of,0,SEEK_SET)) return -1;
+	else return size;
 }
 
 int fbcp(FILE * from, FILE * to)
@@ -61,15 +61,20 @@ int fbcp(FILE * from, FILE * to)
  * -2 : fwrite() (or both fread() and fwrite()) failed to process specified number of bytes and ferror() returned non-zero
  */
 	#ifdef PRINT_PROGRESS
-		int_fast64_t bytes = getsize(from); // Get filesize in bytes 
-	#endif
-
-	#ifdef PRINT_PROGRESS 
-	/* getsize() MAY #undef PRINT_PROGRESS; so a second check.
-	 * one_percent stores 1% of filesize approximately.
-	 * percent_now stores percentage traversed in current iteration; percent stores that of last iteration.
-	 */
-		int_fast64_t one_percent = approx((0.01 * bytes));
+		int_fast64_t bytes; 
+		if( (bytes = getsize(from)) < 0 ) 
+		{
+			#ifdef PRINT_MID_IO_ERROR
+				fputs("Failed : Could not get filesize.\n",stderr);
+			#endif
+			return -3; // Get filesize in bytes, but if there's an error, abort
+		}
+	
+		/* compiling getsize() MAY #undef PRINT_PROGRESS; do a second check.
+	 	* one_percent stores 1% of filesize approximate to a whole number of bytes
+	 	* percent_now stores percentage traversed in current iteration; percent stores that of last iteration.
+	 	*/
+		int_fast64_t one_percent = approx(0.01 * bytes);
 		uint_fast8_t percent = 0, percent_now;
 	#endif
 
@@ -90,6 +95,7 @@ int fbcp(FILE * from, FILE * to)
 	 *		1. This way, we print % 100 times or less only. This is efficient; we re-print only if there's a change.
 	 		2. If not equal to one, we let it build up until it is.	 
 	 */
+	
 	while((bytes_read = fread(buffer,1,BLOCK,from)) == BLOCK && fwrite(buffer,1,BLOCK,to) == BLOCK)
 	{
 		bytes_processed += BLOCK; 
@@ -126,7 +132,7 @@ int fbcp(FILE * from, FILE * to)
 		if(ferror(from))
 		{
 			#ifdef PRINT_MID_IO_ERROR
-				fprintf(stderr,"Failed : Unknown fatal error reading.\n");
+				fputs("Failed : Unknown fatal error reading.\n",stderr);
 			#endif
 			rval = -1;
 		}
@@ -134,7 +140,7 @@ int fbcp(FILE * from, FILE * to)
 		{
 			#ifdef PRINT_MID_IO_ERROR
 			failed_fwrite : 
-			fprintf(stderr,"Failed : Unknown fatal error writing.\n");
+			fpruts("Failed : Unknown fatal error writing.\n",stderr);
 			#endif
 			rval = -2;
 		}
@@ -151,7 +157,7 @@ int fbcp(FILE * from, FILE * to)
 		#ifdef PRINT_MID_IO_ERROR
 			goto failed_fwrite;
 		#else 
-			return -1;
+			return -2;
 		#endif
 		return 0;
 	}
@@ -164,7 +170,7 @@ int overwrite_chk(char * name)
  * Returns 0 if continuing, non-zero if aborting.
  */
 	FILE * tmp = fopen(name,"rb");
-	if(tmp != NULL)
+	if(tmp)
 	{
 		#if defined ABORT_IF_OVERWRITING
 			#ifdef PRINT_OVERWRITE_ABORT
@@ -180,7 +186,7 @@ int overwrite_chk(char * name)
 
 			if(*choice != '\n')
 			{
-				fprintf(stderr,"Exiting...\n");
+				fputs("Exiting...\n",stderr);
 				fclose(tmp);
 				return 2;
 			}
@@ -196,10 +202,11 @@ int overwrite_chk(char * name)
 }
 int bcp(char * source, char * destination)
 {
-/* fbcp() , but uses filenames and manages streams internally.
+/* calls fbcp() , but uses filenames and manages streams internally.
  *
  * Return Values :
  * 0 : Success
+ * 1 : overwite_chk returned true 
  * -1 : fread() failed to process specified number of bytes and ferror() returned non-zero
  * -2 : fwrite() (or both fread() and fwrite()) failed to process specified number of bytes and ferror() returned non-zero
  * -3 : Error closing destination stream (and possibly also fread/fwrite errors as with -1 and -2)
@@ -207,22 +214,20 @@ int bcp(char * source, char * destination)
  */	
 	// Check for overwriting, exit if non-zero is returned.
 	int returned = overwrite_chk(destination);
-
 	if(returned)
 		return returned;
 	
 	FILE * from = fopen(source,"rb");
 	FILE * to = fopen(destination,"wb");
 		
-	if(from != NULL && to != NULL)
+	if(from && to)
     	{
 		int rval = fbcp(from,to);
 		fclose(from);
 		int rval2 = fclose(to);
 			
 		if(!rval && !rval2)
-			return 0;
-		
+			return 0;	
 		else if(!rval2)
 			return rval;
 		else
@@ -239,10 +244,10 @@ int bcp(char * source, char * destination)
 			perror("Failed ");
 		#endif
 		
-		if(from != NULL)
+		if(from)
 	    		fclose(from);
 
-		if(to != NULL)
+		if(to)
 	    		fclose(to);
 
 		return -4;
