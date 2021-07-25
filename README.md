@@ -1,4 +1,4 @@
-# ByteCopy v3.7
+# ByteCopy v3.7.1
  
 ### About
 ByteCopy , or BCP, intends to copy files accurately (_down to the bytes_) in a _simple , safe and efficient manner_.
@@ -14,7 +14,7 @@ _BCP does NOT replace or clone `dd` in the least - `dd` is it's own low-level, a
 ### Usage
 _If you can use `cp` , you can use BCP !_
  
-**Usage : `bcp <source file> [destination file (optional)] [overwrite ? (y/n) (optional)]`**
+**Usage : `bcp <source file> [destination file (optional,stdout default)] [overwrite ? (y/n) (optional,will ask for overwrite permission if destination exists)]`**
  
 So, BCP **_must_** be given _at least_ one argument , the name of the source file.
  
