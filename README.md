@@ -1,13 +1,13 @@
 # ByteCopy v3.7.1
  
 ### About
-ByteCopy , or BCP, intends to copy files accurately (_down to the bytes_) in a _simple , safe and efficient manner_.
+ByteCopy , or BCP, intends to copy file contents accurately (_down to the bytes_) in a _simple , safe and efficient manner_.
  
 It's functionality , but not implementation, overlaps with that of `dd` , and this is by design. 
  
-`dd` uses _low-level_ system calls , non-standard C, has elaborate, (_tiresome ?_) syntax, and is _notorious_ for failing in mysterious or dangerous ways in inexperienced hands. This is not a _defect_ per se; `dd` is an _advanced and very precise_ tool. It was originally written in the times of tape drives, which is also perhaps the reason for some of its peculiarities.
+`dd` uses _low-level_ system calls , non-standard C, has elaborate, (_tiresome ?_) syntax, and is _notorious_ for failing in mysterious or dangerous ways in inexperienced hands. This is not a _defect_ per se; `dd` is an extremely optimised, advanced and very precise tool. It was originally written in the times of tape drives, which is also perhaps the reason for some of its peculiarities.
  
-However, `dd` has become the default for doing everyday tasks : backups of files, disks, flashing ISOs, etc - sometimes causing serious issues for casual users. In such cases, `bcp` functions _alike_ `dd` , with the simple syntax of `cp` , and is _much_ easier to troubleshoot and understand - while also keeping up with dd's speed by < 1 second and being more reliable, easier to casually use and port to _any_ OS/platform. BCP displays progress _by default_, asks before overwriting, etc.
+However, `dd` has become the default for doing everyday tasks : backups of files, disks, flashing ISOs, etc - sometimes causing serious issues for casual users. In such cases, `bcp` functions _alike_ `dd` , with a dead simple syntax , and is _much_ easier to troubleshoot and understand - while also keeping up with dd's speed by < 1 second and being significantly more reliable, easier to casually use and port to _any_ OS/platform (`stdlib`,`stdio`,`stdint` *only* required). BCP displays progress _by default_ where possible, asks before overwriting, etc.
  
 _BCP does NOT replace or clone `dd` in the least - `dd` is it's own low-level, advanced utility, and is certainly the go-to for advanced control over the copying; BCP is for the other 90% of the time :)_
  
@@ -38,4 +38,4 @@ bcp /dev/sda | gzip > drive.bak
 	
 bcp settings.json D:\backups\settings.json
 ```	
-###### You can `#include bcp.h` + compile `bcp.c`to incorporate BCP functionality in your own C code ! In fact, our `main.c` is just ~ 60 lines long !
+###### You can `#include "bcp.h"` + compile `bcp.c`to incorporate BCP functionality in your own code ! In fact, our `main.c` is just ~ 80 lines long !
