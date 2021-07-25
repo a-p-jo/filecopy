@@ -140,7 +140,7 @@ int fbcp(FILE * from, FILE * to)
 		{
 			#ifdef PRINT_MID_IO_ERROR
 			failed_fwrite : 
-			fpruts("Failed : Unknown fatal error writing.\n",stderr);
+			fputs("Failed : Unknown fatal error writing.\n",stderr);
 			#endif
 			rval = -2;
 		}
@@ -180,11 +180,13 @@ int overwrite_chk(char * name)
 			return 1;
 			
 		#elif defined ASK_BEFORE_OVERWRITE
-			char choice[101] = "";
 			fprintf(stderr,"Warning : %s already exists !\nPress [ENTER] to overwrite or any key to abort : ", name);
-			fgets(choice,101,stdin);
+			char choice = 0;
+			for(unsigned tmp=0; tmp != '\n' && tmp != EOF;choice? choice : (choice = tmp))
+				tmp = fgetc(stdin);
+					
 
-			if(*choice != '\n')
+			if(choice != '\n')
 			{
 				fputs("Exiting...\n",stderr);
 				fclose(tmp);
