@@ -1,6 +1,7 @@
 #include "bcp.h" 
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 /* Usage : bcp <source> [destination] [overwrite ? (y/n) ]
  *
