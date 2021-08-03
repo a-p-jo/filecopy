@@ -1,7 +1,7 @@
 # ByteCopy v3.7.1
 
 ### About
-ByteCopy , or BCP, is both a utility + a tiny library/API for copying a file's contents to another accurately (_down to the bytes_) in a _simple , safe and efficient manner_.
+ByteCopy , or BCP, is both a utility + a tiny library/API for copying a file's contents to another in a _simple , safe and efficient manner_. There's no malloc, and standardised `FILE` streams are used , and none are ever left open.
  
 It's functionality as a utility overlaps in parts with that of `dd`, but it is not a clone. 
  
