@@ -1,4 +1,4 @@
-# ByteCopy v4
+# ByteCopy v4.1
 
 ### About
 ByteCopy , or `bcp`, is both a tiny utility + a tiny library/API for copying a stream's contents to another in a _simple , safe and efficient manner_. There's no malloc, and standardised `FILE` streams are used.
