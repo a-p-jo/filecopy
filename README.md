@@ -41,42 +41,40 @@ bcp settings.json D:\backups\settings.json
 
 ### Use it in your code !
 ```c
-#define PRINT_PROGRESS stderr /* If defined, fbcp() writes progress every 1% to the stream */
-#define BUFSZ (64*1024) /* 64 KiB */
-
-/* Bytes written & synced to destination stream in last successful call to fbcp() */ 
-extern uintmax_t bytes_processed;
-
-enum retval {
+enum bcp_err {
 	SUCCESS,
 	/* From stream was seekable to SEEK_END, but reseting to initial position failed. 
 	 * Cannot occur if PRINT_PROGRESS undefined.
 	 */
-	FROM_SEEK_ERR,
+	SRC_SEEK_ERR,
 	/* Reading the from stream failed and ferror(from) returned true. 
 	 * No error in to stream.
 	 */
-	FERROR_FROM,
+	SRC_FERROR,
 	/* Writing the to stream failed and ferror(to) returned true. 
 	 * No error in from stream.
 	 */
-	FERROR_TO,
+	DEST_FERROR,
 	/* Reading the from stream & writing the to stream failed and ferror() returned true for both */
-	FERROR_BOTH,
-	/* Flushing the to stream failed */
-	FFLUSH_ERR }; 
+	BOTH_FERROR
+};
 
-/* Copies contents of from stream onto to stream 
- * until specified number of bytes or EOF, whichever comes first,
- * and flushes it.
- * If bytes argument is 0, copies till EOF.
- *
- * Copies in blocks of BUFSZ bytes. 
- * If PRINT_PROGRESS defined, the from stream is seekable to SEEK_END, and data to copy is > 100 bytes,
- * then displays progress of copy operation in percentage on stdout.
+struct fbcp_retval {
+	enum bcp_err err;
+	uintmax_t bytes_processed;
+};
+
+/* Copies at most n bytes src -> dest.
+ * If n = 0, or n > fsize(src), copies till EOF instead.
+ * 
+ * If out != NULL, and n > 0 or fsize(src) can be determined,
+ * writes progress percentage to it like :
+ * 	
+ * 	fprintf(out, "%02u%%\r", (bytes_copied / (n > 0? n : fsize(src)) ) * 100);
+ * 	fflush(out); 
  */
-enum retval fbcp(FILE *restrict from, FILE *restrict to, uintmax_t bytes);
+struct fbcp_retval fbcp(FILE *dest, FILE *src, uintmax_t n, FILE *out);
 ```
 NOTES :
-- _Passed `FILE *`s must be unique, non-NULL pointers returned previously by `fopen()` and not yet passed to `fclose()` or implicitly closed by similar means, else behaviour is undefined._
-- _Copied data is read starting from ` FILE *from`'s `SEEK_CUR` position, and written starting from `FILE *to`'s `SEEK_CUR` position._
+- _`src`,`dest` must be non-NULL pointers returned previously by `fopen()` and not yet passed to `fclose()` or implicitly closed by similar means, else behaviour is undefined._
+- _Copied data is read starting from ` src`'s `SEEK_CUR` position, and written starting from `dest`'s `SEEK_CUR` position._
