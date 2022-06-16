@@ -21,27 +21,27 @@ static inline uintmax_t divround(uintmax_t x, uintmax_t y) { return (x + y/2) / 
 typedef enum {
 	filesize_error_none,
 	filesize_error_unseekable, /* stream isn't a regular file, has no real "size" */
-	fileszie_error_spurious    /* sudden failure, stream indeterminate. */
+	filesize_error_spurious    /* sudden failure, stream indeterminate. */
 } filesize_error;
 
 typedef struct { uintmax_t nbytes; filesize_error err; } filesize_result;
-
-static inline filesize_result filesize_result_err(filesize_error e) { return (filesize_result){.err = e}; }
 
 /* Only meaningful if f is a regular file opened in binary mode */
 static inline filesize_result filesize(FILE *f)
 {
 	intmax_t curpos = filecopy_ftell(f);
 	if (curpos < 0 || filecopy_fseek(f, 0, SEEK_END) != 0)
-		return filesize_result_err(filesize_error_unseekable);
+		return (filesize_result) {.err = filesize_error_unseekable};
 	
 	intmax_t endpos = filecopy_ftell(f);
 	int tryreset = filecopy_fseek(f, curpos, SEEK_SET);
 	if (endpos < 0) /* Is spurious only if trying to reset fails. */
-		return filesize_result_err(tryreset == 0? filesize_error_unseekable : fileszie_error_spurious);
+		return (filesize_result) {
+			.err = tryreset != 0? filesize_error_spurious : filesize_error_unseekable
+		};
 	else if (tryreset != 0)
-		return filesize_result_err(fileszie_error_spurious);
-	
+		return (filesize_result) {.err = filesize_error_spurious};
+
 	return (filesize_result) {.nbytes = endpos-curpos};
 }
 
@@ -50,8 +50,8 @@ filecopy_result filecopy(FILE *dst, FILE *src, uintmax_t nbytes, void(*cb)(uint_
 	/* If we have to callback to report progress, we need to know the stream's size. */
 	if (cb && !nbytes) {
 		filesize_result srcsz = filesize(src);
-		if (srcsz.err == fileszie_error_spurious) /* Stream unrecoverable */
-			return (filecopy_result) {.err = filecopy_error_seek};
+		if (srcsz.err == filesize_error_spurious) /* Stream unrecoverable */
+			return (filecopy_result) {.err = filecopy_error_src};
 		else
 			nbytes = srcsz.nbytes;
 	}
@@ -66,7 +66,10 @@ filecopy_result filecopy(FILE *dst, FILE *src, uintmax_t nbytes, void(*cb)(uint_
 		if (nbytes && nbytes < res.bytes_copied+sizeof(buf))
 			toread = nbytes - res.bytes_copied; /* In last loop read only as much as left */
 
-		if (fread(buf, 1, toread, src) == toread && fwrite(buf, 1, toread, dst) == toread) {
+		if (
+			fread(buf, 1, toread, src) == toread 
+			&& fwrite(buf, 1, toread, dst) == toread
+		) {
 			res.bytes_copied += toread;
 			if (one_percent) {
 				uint_least8_t curprog = divround(res.bytes_copied, one_percent);
@@ -78,9 +81,9 @@ filecopy_result filecopy(FILE *dst, FILE *src, uintmax_t nbytes, void(*cb)(uint_
 	}
 	
 	if (ferror(src))
-		res.err = filecopy_error_read;
+		res.err = filecopy_error_src;
 	else if (ferror(dst))
-		res.err = filecopy_error_write;
+		res.err = filecopy_error_dst;
 	else if (nbytes && res.bytes_copied < nbytes)
 		res.err = filecopy_error_early_eof;
 	return res;

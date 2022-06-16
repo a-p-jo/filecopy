@@ -4,36 +4,46 @@
 #include <stdbool.h>
 #include "filecopy.h"
 
-#define NAME "filecopy v1.0"
+#define VERSION "1.1"
 
 typedef struct { long double nunits; char suffix; } bytes_fmt_result;
 
 static inline bytes_fmt_result bytes_fmt(uintmax_t bytes)
 {
 	static const char suffix[] = {'K', 'M', 'G', 'T'};
-
 	bytes_fmt_result res = {bytes, 'B'};
-	for (uint_least8_t i = 0; i < sizeof(suffix) && res.nunits/1024 >= 1; res.nunits /= 1024, res.suffix = suffix[i++])
+	for (
+		uint_least8_t i = 0;
+		i < sizeof(suffix) && res.nunits/1024 >= 1;
+		res.nunits /= 1024, res.suffix = suffix[i++]
+	)
 		;
 	return res;
 }
 
-static inline bool streq(const char *a, const char *b) { return strcmp(a, b) == 0; }
+static inline bool streq(const char *a, const char *b)
+{
+	return strcmp(a, b) == 0;
+}
 
-static void print_progress(uint_least8_t percentage) { printf("%03u%%\r", percentage); fflush(stdout); }
+static void print_progress(uint_least8_t percentage)
+{
+	printf("%03u%%\r", percentage);
+	fflush(stdout);
+}
 
 int main(int argc, char **argv)
 {
 	if (argc < 2 || streq("-h",argv[1]) || streq("--help",argv[1]))
-		fputs(
-			NAME" : A simple, safe, performant and reliable file copying program.\n"
+		fprintf(
+			stderr, "%s v"VERSION"\n"
 			"Usage : filecopy <src> [dst (optional, stdout by default)] [overwrite dst? (y/n) (optional)]\n"
 			"\n"
-			"Copies the contents of src to dst if given, else to stdout.\n"
+			"Copies the contents of src to dst (if given, else to stdout).\n"
 			"If dst does not exist, creates it. If it pre-exists, if 'y' is specified, continues.\n"
 			"If 'n' is specified, aborts. Else, asks for permission before overwriting.\n"
 			"\n"
-			"Example : filecopy archlinux.iso /dev/sda y\n", stderr
+			"Example : %s archlinux.iso /dev/sda y\n", argv[0], argv[0]
 		), exit(EXIT_FAILURE);
 
 	FILE *src = fopen(argv[1],"rb"), *dst = stdout;
@@ -50,7 +60,8 @@ int main(int argc, char **argv)
 				if (streq("y", argv[3]) || streq("Y", argv[3]))
 					;
 				else if (streq("n", argv[3]) || streq("N", argv[4]))
-					fprintf(stderr, "\"%s\" pre-exists. Aborted.\n", argv[2]), exit(EXIT_SUCCESS);
+					fprintf(stderr, "\"%s\" pre-exists. Aborted.\n", argv[2]),
+					exit(EXIT_SUCCESS);
 				else ask : {
 					fprintf(stderr, "\"%s\" pre-exists. Overwrite ? (y/n) : ", argv[2]);
 					int ch = getchar();
@@ -78,19 +89,13 @@ int main(int argc, char **argv)
 			bfmt.nunits, bfmt.suffix, res.bytes_copied
 		), exit(EXIT_SUCCESS);
 	}
-	case filecopy_error_seek :
-		fprintf(
-			stderr, "Error : Unable to seek in \"%s\"%s%s",
-			argv[1], errno? " : " : ".",
-			errno? strerror(errno) : ""
-		), exit(EXIT_FAILURE);
-	case filecopy_error_read :
+	case filecopy_error_src :
 		fprintf(
 			stderr, "Error : Unknown fatal error reading \"%s\" %s%s\n", 
 			argv[1], errno? " : " : ".",
 			errno? strerror(errno) : ""
 		), exit(EXIT_FAILURE);
-	case filecopy_error_write :
+	case filecopy_error_dst :
 		fprintf(
 			stderr, "Error : Unknown fatal error writing to \"%s\" %s%s\n", 
 			argv[2]? argv[2] : "stdout", errno? " : " : ".",
