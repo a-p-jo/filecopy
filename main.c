@@ -10,10 +10,10 @@ typedef struct { long double nunits; char suffix; } bytes_fmt_result;
 
 static inline bytes_fmt_result bytes_fmt(uintmax_t bytes)
 {
-	static const char suffix[] = {'B', 'K', 'M', 'G', 'T'};
+	static const char suffix[] = {'K', 'M', 'G', 'T'};
 
-	bytes_fmt_result res = {bytes, suffix[0]};
-	for (uint_least8_t i = 0; i < sizeof(suffix) && res.nunits/1024 >= 1; res.nunits /= 1024, res.suffix = suffix[++i])
+	bytes_fmt_result res = {bytes, 'B'};
+	for (uint_least8_t i = 0; i < sizeof(suffix) && res.nunits/1024 >= 1; res.nunits /= 1024, res.suffix = suffix[i++])
 		;
 	return res;
 }
