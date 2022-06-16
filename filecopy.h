@@ -1,41 +1,27 @@
-#ifndef BCP_H
-#define BCP_H
+#ifndef FILECOPY_H
+#define FILECOPY_H
 	
-#include <stdint.h>
-#include <stdio.h>
+#include <stdint.h> /* uintmax_t */
+#include <stdio.h>  /* FILE      */
 	
-enum bcp_err {
-	SUCCESS,
-	/* From stream was seekable to SEEK_END, but reseting to initial position failed. 
-	 * Cannot occur if PRINT_PROGRESS undefined.
-	 */
-	SRC_SEEK_ERR,
-	/* Reading the from stream failed and ferror(from) returned true. 
-	 * No error in to stream.
-	 */
-	SRC_FERROR,
-	/* Writing the to stream failed and ferror(to) returned true. 
-	 * No error in from stream.
-	 */
-	DEST_FERROR,
-	/* Reading the from stream & writing the to stream failed and ferror() returned true for both */
-	BOTH_FERROR
-};
+typedef enum  {
+	filecopy_error_none,      /* Successful, operation complete. */
+	filecopy_error_early_eof, /* EOF on src before n bytes read, stopped. */
+	filecopy_error_seek,      /* Seeking failed, src indeterminate. Only if callback !NULL && nbytes 0. */
+	/* IO error, dst and src indeterminate */
+	filecopy_error_read,      /* ferror(src) is true */
+	filecopy_error_write      /* ferror(dst) is true */
+} filecopy_error;
 
-struct fbcp_retval {
-	enum bcp_err err;
-	uintmax_t bytes_processed;
-};
+typedef struct { uintmax_t bytes_copied; filecopy_error err; } filecopy_result;
 
-/* Copies at most n bytes src -> dest.
- * If n = 0, or n > fsize(src), copies till EOF instead.
- * 
- * If out != NULL, and n > 0 or fsize(src) can be determined,
- * writes progress percentage to it like :
- * 	
- * 	fprintf(out, "%02u%%\r", (bytes_copied / (n > 0? n : fsize(src)) ) * 100);
- * 	fflush(out); 
+/* Copies n bytes to dst from src.
+ * If nbytes is 0, copies src until EOF.
+ *  
+ * If callback is not NULL, calls it with current progress %
+ * if nbytes is non-zero or src is seekable.
  */
-struct fbcp_retval fbcp(FILE *dest, FILE *src, uintmax_t n, FILE *out);
+filecopy_result filecopy(FILE *dst, FILE *src, uintmax_t nbytes, void (*callback)(uint_least8_t progress_percentage));
 
 #endif
+

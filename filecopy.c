@@ -1,122 +1,87 @@
-#include "bcp.h"
-
-/* Reject compilation for freestanding or < C99 */
-#if !defined __STDC_HOSTED__ || __STDC_VERSION__ < 199901L
-	#error "Hosted C99 standard library required !"
-
-#elif defined _WIN32
-	/* Silence incorrect MSVC warnings */	
-	#define _CRT_SECURE_NO_WARNINGS
-	/* Inform MSVC & MinGW-W64 of target Win32 API */
-	#define _WIN32_WINNT _WIN32_WINNT_WINXP
-
-	/* Redefine ftell/fseek to 64-bit extensions */
-	#define ftell _ftelli64
-	#define fseek _fseeki64
-
+#if defined _WIN32
+	#define filecopy_ftell _ftelli64
+	#define filecopy_fseek _fseeki64
 #elif defined __unix__ || defined __APPLE__
-	/* Ensure off_t returned by ftello/fseeko are 64-bit */
-	#define _FILE_OFFSET_BITS 64
-	
-	/* Redefine ftell/fseek to 64-bit extensions */
-	#define ftell ftello
-	#define fseek fseeko
-
-/* On non-Windows/POSIX env where long < 64-bit, ftell/fseek remain 32-bit capped */
+	#define _FILE_OFFSET_BITS 64 /* Ensure off_t is 64-bit */
+	#define filecopy_ftell ftello
+	#define filecopy_fseek fseeko
+#else /* If long is 32-bit, offsets remain 32-bit capped. */
+	#define filecopy_ftell ftell
+	#define filecopy_fseek fseek
 #endif
 
-typedef unsigned char byte;
+#include "filecopy.h"
 
-/* Copying done in 64 KiB blocks */
-enum { BUFSZ = 64 * 1024 , PRINT_PROGRESS_THRESHOLD = 1};
+#define IO_BUFSZ     (64*1024) /* 64 KiB                   */
+#define CB_THRESHOLD (   1   ) /* Callback called every 1% */
 
-/* Return quotient of x/y rounded to nearest whole number */
-static uintmax_t div_round(uintmax_t x, uintmax_t y)
+/* Return quotient rounded to nearest whole number. */
+static inline uintmax_t divround(uintmax_t x, uintmax_t y) { return (x + y/2) / y;}
+
+typedef enum {
+	filesize_error_none,
+	filesize_error_unseekable, /* stream isn't a regular file, has no real "size" */
+	fileszie_error_spurious    /* sudden failure, stream indeterminate. */
+} filesize_error;
+
+typedef struct { uintmax_t nbytes; filesize_error err; } filesize_result;
+
+static inline filesize_result filesize_result_err(filesize_error e) { return (filesize_result){.err = e}; }
+
+/* Only meaningful if f is a regular file opened in binary mode */
+static inline filesize_result filesize(FILE *f)
 {
-	return (x + y/2)/y;
+	intmax_t curpos = filecopy_ftell(f);
+	if (curpos < 0 || filecopy_fseek(f, 0, SEEK_END) != 0)
+		return filesize_result_err(filesize_error_unseekable);
+	
+	intmax_t endpos = filecopy_ftell(f);
+	int tryreset = filecopy_fseek(f, curpos, SEEK_SET);
+	if (endpos < 0) /* Is spurious only if trying to reset fails. */
+		return filesize_result_err(tryreset == 0? filesize_error_unseekable : fileszie_error_spurious);
+	else if (tryreset != 0)
+		return filesize_result_err(fileszie_error_spurious);
+	
+	return (filesize_result) {.nbytes = endpos-curpos};
 }
 
-/* Return 0 if size = 0 or error in determining size.
- * Return -1 if of could not be reset as original.
- * Return +ve integer on success.
- */
-static intmax_t fsize(FILE *of)
+filecopy_result filecopy(FILE *dst, FILE *src, uintmax_t nbytes, void(*cb)(uint_least8_t))
 {
-	intmax_t initpos = ftell(of);
-	if(initpos < 0)
-		return 0;
-	else if(fseek(of, 0, SEEK_END))
-		return -1;
-
-	intmax_t size = ftell(of);
-	if(size <= 0 || fseek(of, initpos, SEEK_SET))
-		return 0;
-	else
-		return size;
-}
-
-struct fbcp_retval fbcp(FILE *dest, FILE *src, uintmax_t n, FILE *out)
-{		
-	/* .err = .bytes_processed = 0 */
-	struct fbcp_retval retval = {0};
-
-	if(out && !n) {
-		intmax_t size = fsize(src);
-		if(size > 0)
-			n = size;
-		/* fsize() could not restore src, abort */
-		else if(size == -1) {
-			retval.err = SRC_SEEK_ERR;
-			return retval;
-		}
+	/* If we have to callback to report progress, we need to know the stream's size. */
+	if (cb && !nbytes) {
+		filesize_result srcsz = filesize(src);
+		if (srcsz.err == fileszie_error_spurious) /* Stream unrecoverable */
+			return (filecopy_result) {.err = filecopy_error_seek};
+		else
+			nbytes = srcsz.nbytes;
 	}
 		
-	/* Stack allocated buffer, less cache misses and overhead */
-	byte buf[BUFSZ];
-	size_t chunk = BUFSZ, progress = 0, cur_progress = 0;
-	uintmax_t bytes_read = 0, bytes_written = 0,
-		  one_percent = out? div_round(n, 100) : 0;
+	filecopy_result res = {0};
+	unsigned char buf[IO_BUFSZ];
+	uintmax_t one_percent = cb? divround(nbytes, 100) : 0; /* If one_percent is 0, no callback */
+	uint_least8_t prog = 0;
 
-	/* Iterate until either an fread()/fwrite() call fails or done
-	 * copying n bytes.
-	 */
-	loop :
-	
-	if(n && n < bytes_written + BUFSZ)
-		chunk = n - bytes_written;
-	
-	bytes_read = fread(buf, 1, chunk, src);
+	while (nbytes? res.bytes_copied < nbytes : 1) {
+		size_t toread = sizeof(buf);
+		if (nbytes && nbytes < res.bytes_copied+sizeof(buf))
+			toread = nbytes - res.bytes_copied; /* In last loop read only as much as left */
 
-	if(bytes_read == chunk && fwrite(buf, 1, chunk, dest) == bytes_read) {
-		bytes_written += chunk;
-		bytes_read = 0;
-
-		if(one_percent > 0) {
-			cur_progress = div_round(bytes_written, one_percent);
-			/* Printing is expensive, only update if change >= threshold */
-			if(cur_progress - progress >= PRINT_PROGRESS_THRESHOLD)
-			{
-				fprintf(out, "%02zu%%\r", cur_progress);
-				fflush(out);
-				progress = cur_progress;
+		if (fread(buf, 1, toread, src) == toread && fwrite(buf, 1, toread, dst) == toread) {
+			res.bytes_copied += toread;
+			if (one_percent) {
+				uint_least8_t curprog = divround(res.bytes_copied, one_percent);
+				if (curprog - prog >= CB_THRESHOLD)
+					cb((prog = curprog));
 			}
-		}
-
-		if(n? bytes_written < n : 1)
-			goto loop;
+		} else
+			break;
 	}
 	
-	/* Check streams for error */
-	int err_src = ferror(src), err_dest = ferror(dest);
-	if(err_src && err_dest)
-		retval.err = BOTH_FERROR;
-	else if(err_src)
-		retval.err = SRC_FERROR;
-	/* There may be leftovers, (if n % BUFSZ != 0) fwrite() */
-	else if(err_dest || fwrite(buf, 1, bytes_read, dest) != bytes_read)
-		retval.err = DEST_FERROR;
-	else
-		retval.bytes_processed = bytes_written + bytes_read;
-
-	return retval;		
+	if (ferror(src))
+		res.err = filecopy_error_read;
+	else if (ferror(dst))
+		res.err = filecopy_error_write;
+	else if (nbytes && res.bytes_copied < nbytes)
+		res.err = filecopy_error_early_eof;
+	return res;
 }
