@@ -80,6 +80,8 @@ int main(int argc, char **argv)
 			), exit(EXIT_FAILURE);
 	}
 
+	/* filecopy() does it's own buffering so disable stdio buffering */
+	setbuf(src, NULL), setbuf(dst, NULL);
 	filecopy_result res = filecopy(dst, src, 0, print_progress);
 	switch (res.err) {
 	case filecopy_error_none : {
